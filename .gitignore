@@ -1,0 +1,8 @@
+# Meta/settings folders
+.vs
+.vscode
+
+# Generated files
+.o
+.exe
+.out
