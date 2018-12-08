@@ -3,6 +3,6 @@
 .vscode
 
 # Generated files
-.o
-.exe
-.out
+*.o
+*.exe
+*.out

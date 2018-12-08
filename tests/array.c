@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "../include/array.h"
 
-int main(int argc, char* argv)
+int main(int argc, char* argv[])
 {
     printf("libcon array test.\n");
 

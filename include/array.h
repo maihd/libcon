@@ -30,7 +30,10 @@ static void* array_grow(void* array, int reqsize, int elemsize)
     if (new_array)
     {
         new_array[0] = size;
-        new_array[1] = array_count(array);
+        if (!array)
+        {
+            new_array[1] = 0;
+        }
         return new_array + 2;
     }
     else
