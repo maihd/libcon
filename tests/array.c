@@ -22,20 +22,5 @@ int main(int argc, char* argv[])
     }
     printf("=> DONE!\n");
 
-    printf("Print before removing...\n");
-    for (i = 0, n = array_count(intarr); i < n; i++)
-    {
-        printf("intarr[%d] = %d\n", i, intarr[i]);
-    }
-
-    i = rand() % array_count(intarr);
-    printf("Remove %d from array\n", intarr[i]);
-    array_remove(intarr, intarr[i], intcmp);
-    printf("Print after removing...\n");
-    for (i = 0, n = array_count(intarr); i < n; i++)
-    {
-        printf("intarr[%d] = %d\n", i, intarr[i]);
-    } 
-
     return 0;
 }

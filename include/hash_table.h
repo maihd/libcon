@@ -117,6 +117,10 @@ static void* hashtable_grow(void* table, int reqsize, int elemsize)
     int size = raw->size > 0 ? raw->size : 8;
     while (size < reqsize) size *= 2;
 
+    int* keys = raw->keys;
+    int* nexts = raw->nexts;
+    int* hashs = raw->hashs;
+    
     struct hashtable* new_table = (struct hashtable*)realloc(raw, sizeof(struct hashtable) + size * elemsize);
     if (new_table)
     {
@@ -126,8 +130,9 @@ static void* hashtable_grow(void* table, int reqsize, int elemsize)
 
         if (!new_table->nexts || !new_table->keys)
         {
-            free(new_table->nexts);
             free(new_table->keys);
+            free(new_table->nexts);
+            free(new_table->hashs);
             free(new_table);
             return NULL;
         }
@@ -138,7 +143,9 @@ static void* hashtable_grow(void* table, int reqsize, int elemsize)
     }
     else
     {
-        free(table);
+        free(keys);
+        free(nexts);
+        free(hashs);
         return NULL;
     }
 }
