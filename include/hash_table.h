@@ -82,6 +82,8 @@ struct hashtable
         }                                                   \
     } while (0)
 
+#define hashtable_has(t, key) (hashtable_find(t, key, NULL, NULL) > -1)
+
 #define hashtable_ensure(t, n) (hashtable_size(t) < (n) ? (*(void**)&(t) = hashtable_grow(t, (n), sizeof((t)[0]))) != NULL : 1)
 
 static int hashtable_find(void* table, int key, int* out_hash, int* out_prev)
