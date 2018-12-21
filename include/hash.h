@@ -17,7 +17,7 @@ inline int hashof(const type_t& x)
 }
 #endif
 
-static int murmur_hash(void* data, size_t size)
+static int murmur_hash(const void* data, size_t size)
 {
     static int seed = 0;
     
