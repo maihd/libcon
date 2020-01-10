@@ -7,6 +7,8 @@ EXE=$(patsubst %.c,%.exe, $(SRC))
 
 .PHONY: clean all
 
+%.c: %.h
+
 %.exe: %.c
 	@echo "=> Testing $(patsubst tests/%.c,%.h,$<)"
 	@echo "   Compiling target $<"

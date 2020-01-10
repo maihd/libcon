@@ -1,44 +1,45 @@
 #include <stdio.h>
 
-#include "./assets/string_data.c"
 #include "../include/hash.h"
 #include "../include/hash_table.h"
 
+// test data
+#include "./assets/string_data.c"
+
 int main(int argc, char* argv[])
 {
-    int* itab;
-    hashtable_init(itab, 64);
+    HashTable(int) intTable = 0;
+    HashTable_init(intTable, 64, 64);
 
-    printf("Set value to itab[10] = 10\n");
-    hashtable_set(itab, 10, 10);
+    printf("Set value to intTable[10] = 10\n");
+    HashTable_set(intTable, 10, 10);
     
-    int val;
-    printf("Get value of itab[10]\n");
-    hashtable_get(itab, 10, val);
-    printf("val = %d\n", val);
+    int intValue;
+    HashTable_get(intTable, 10, intValue);
+    printf("Get value of intTable[10] = %d\n", intValue);
 
-    hashtable_free(itab);
+    HashTable_free(intTable);
 
-    int* hash_collision_table;
-    hashtable_init(hash_collision_table, 64);
+    HashTable(int) hashCollisionCheckTable = 0;
+    HashTable_init(hashCollisionCheckTable, 64, 64);
     
     int i;
     int collision = 0;
     for (i = 0; i < string_data_count; i++)
     {
-        int hash = murmur_hash(string_data[i], strlen(string_data[1]));
-        if (hashtable_has(hash_collision_table, hash))
+        int key = murmur_hash(string_data[i], strlen(string_data[1]));
+        if (HashTable_has(hashCollisionCheckTable, key))
         {
             collision = 1;
-            hashtable_get(hash_collision_table, hash, val);
-            printf("Hash collsion. Key: %s - hash: %d - Times: %d\n", string_data[i], hash, ++val);
+            HashTable_get(hashCollisionCheckTable, key, intValue);
+            printf("Hash collsion. Key: %s - hashedKey: %d - Times: %d\n", string_data[i], key, ++intValue);
         }
         else
         {
-            val = 1;
+            intValue = 1;
         }
 
-        hashtable_set(hash_collision_table, hash, val);
+        HashTable_set(hashCollisionCheckTable, key, intValue);
     }
     
     if (!collision)
@@ -46,6 +47,6 @@ int main(int argc, char* argv[])
         printf("There is no hash collision occured.\n");
     }
 
-    hashtable_free(hash_collision_table);
+    HashTable_free(hashCollisionCheckTable);
     return 0;
 }

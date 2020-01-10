@@ -1,155 +1,192 @@
-#ifndef __LIBCON_HASHTABLE_H__
-#define __LIBCON_HASHTABLE_H__
+#pragma once
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifndef HASHTABLE_ASSERT
-#define HASHTABLE_ASSERT(exp, msg) assert(exp && msg)
+#define HASHTABLE_ASSERT(exp, msg) assert((exp) && (msg))
 #endif
 
-struct hashtable
-{
-    int size;
-    int count;
-    int hash_count;
-    int* hashs;
-    int* nexts;
-    int* keys;
-};
+/* struct HashTable
+** memory layout:   |[size]|[count]|[hashCount]|[hashs]|[header]|[nexts]|[keys]|[values]|
+** memory offset: -12     -8      -4            T   size*4   size*8  size*12  16*size              
+** T is your table
+**/
+#define HashTable(T)                T*
 
-#define hashtable_raw(t)   ((struct hashtable*)(t) - 1)
-#define hashtable_size(t)  ((t) ? hashtable_raw(t)->size : 0)
-#define hashtable_count(t) ((t) ? hashtable_raw(t)->count : 0)
+#define HashTable_raw(table)        ((int*)(table) - 3)
+#define HashTable_size(table)       ((table) ? HashTable_raw(table)[0] : 0)
+#define HashTable_count(table)      ((table) ? HashTable_raw(table)[1] : 0)
+#define HashTable_hashCount(table)  ((table) ? HashTable_raw(table)[2] : 0)
 
-#define hashtable_init(t, HASH_COUNT)                                               \
-    do {                                                                            \
-        struct hashtable* _t = (struct hashtable*)malloc(sizeof(struct hashtable)); \
-        _t->size  = 0;                                                              \
-        _t->count = 0;                                                              \
-        _t->hash_count = HASH_COUNT;                                                \
-        _t->hashs = (int*)malloc(sizeof(int) * (HASH_COUNT));                       \
-        _t->nexts = NULL;                                                           \
-        _t->keys  = NULL;                                                           \
-                                                                                    \
-        HASHTABLE_ASSERT(_t->hashs, "Hash list is invalid!");                       \
-        int _i, _n;                                                                 \
-        for (_i = 0, _n = (HASH_COUNT); _i < _n; _i++) {                            \
-            _t->hashs[_i] = -1;                                                     \
-        }                                                                           \
-                                                                                    \
-        *(void**)&(t) = _t + 1;                                                     \
+#define HashTable_calcMemorySize(size, hashCount, itemSize) (3 * sizeof(int) + (size) * (2 * sizeof(int) + (itemSize)) + (hashCount) * sizeof(int))
+
+#define HashTable_init(table, size, hashCount)                                                      \
+    do {                                                                                            \
+        HASHTABLE_ASSERT((size) > 0, "size must be > 0");                                           \
+        HASHTABLE_ASSERT((hashCount) > 0, "hashCount must be > 0");                                 \
+                                                                                                    \
+        int* raw = (int*)malloc(HashTable_calcMemorySize(size, hashCount, sizeof((table)[0])));     \
+        raw[0]   = size;                                                                            \
+        raw[1]   = 0;                                                                               \
+        raw[2]   = hashCount;                                                                       \
+                                                                                                    \
+        int i, n;                                                                                   \
+        int* hashs = raw + 3;                                                                       \
+        for (i = 0, n = (hashCount); i < n; i++) {                                                  \
+            hashs[i] = -1;                                                                          \
+        }                                                                                           \
+                                                                                                    \
+        *(void**)&(table) = hashs;                                                                  \
     } while (0)
 
-#define hashtable_free(t)                           \
+#define HashTable_free(table)                       \
     do {                                            \
-        struct hashtable* __raw = hashtable_raw(t); \
-        free(__raw->keys);                          \
-        free(__raw->nexts);                         \
-        free(__raw->hashs);                         \
-        free(__raw);                                \
+        if (table) {                                \
+            int* raw = HashTable_raw(table);        \
+            free(raw);                              \
+            (table) = 0;                            \
+        }                                           \
     } while (0)
 
-#define hashtable_set(t, key, value)                        \
-    do {                                                    \
-        int __h, __p;                                       \
-        int __c = hashtable_find(t, key, &__h, &__p);       \
-        if (__c > -1) {                                     \
-            t[__c] = value;                                 \
-        } else {                                            \
-            int S = hashtable_count(t) + 1;                 \
-            if (hashtable_ensure(t, S)) {                   \
-                struct hashtable* __raw = hashtable_raw(t); \
-                __c = __raw->count++;                       \
-                if (__p > -1) {                             \
-                    __raw->nexts[__p] = __c;                \
-                } else {                                    \
-                    __raw->hashs[__h] = __c;                \
-                }                                           \
-                                                            \
-                __raw->nexts[__c]  = -1;                    \
-                __raw->keys[__c]   = key;                   \
-                (t)[__c] = value;                           \
-            }                                               \
-        }                                                   \
+#define HashTable_set(t, key, value)                                                        \
+    do {                                                                                    \
+        int hash, prev;                                                                     \
+        int curr = HashTable_find(t, key, &hash, &prev);                                    \
+        if (curr > -1) {                                                                    \
+            void* values = ((int*)(t)) + HashTable_hashCount(t) + 2 * HashTable_size(t);    \
+            void* ptr = t;                                                                  \
+            *(void**)&(t) = values;                                                         \
+            (t)[curr] = value;                                                              \
+            *(void**)&(t) = ptr;                                                            \
+        } else {                                                                            \
+            if (HashTable_ensure(t, HashTable_count(t) + 1)) {                              \
+                int* raw = HashTable_raw(t);                                                \
+                                                                                            \
+                int  size      = raw[0];                                                    \
+                int  hashCount = raw[2];                                                    \
+                                                                                            \
+                int* hashs = (int*)(t);                                                     \
+                int* nexts = hashs + hashCount;                                             \
+                int* keys  = nexts + size;                                                  \
+                                                                                            \
+                curr = raw[1]++;                                                            \
+                if (prev > -1) {                                                            \
+                    nexts[prev] = curr;                                                     \
+                } else {                                                                    \
+                    hashs[hash] = curr;                                                     \
+                }                                                                           \
+                                                                                            \
+                nexts[curr]  = -1;                                                          \
+                keys[curr]   = key;                                                         \
+                                                                                            \
+                void* values = keys + size;                                                 \
+                void* ptr = t;                                                              \
+                *(void**)&(t) = values;                                                     \
+                (t)[curr] = value;                                                          \
+                *(void**)&(t) = ptr;                                                        \
+            }                                                                               \
+        }                                                                                   \
     } while (0)
 
-#define hashtable_get(t, key, out_value)                    \
-    do {                                                    \
-        int __c = hashtable_find(t, key, NULL, NULL);       \
-        if (__c > -1) {                                     \
-            out_value = (t)[__c];                           \
-        }                                                   \
+#define HashTable_get(table, key, outValue)                                                             \
+    do {                                                                                                \
+        int currIndex = HashTable_find(table, key, NULL, NULL);                                         \
+        if (currIndex > -1) {                                                                           \
+            void* values = ((int*)(table)) + HashTable_hashCount(table) + 2 * HashTable_size(table);    \
+            void* ptr = table;                                                                          \
+            *(void**)&(table) = values;                                                                 \
+            outValue = (table)[currIndex];                                                              \
+            *(void**)&(table) = ptr;                                                                    \
+        }                                                                                               \
     } while (0)
 
-#define hashtable_has(t, key) (hashtable_find(t, key, NULL, NULL) > -1)
+#define HashTable_has(table, key) (HashTable_find(table, key, NULL, NULL) > -1)
 
-#define hashtable_ensure(t, n) (hashtable_size(t) < (n) ? (*(void**)&(t) = hashtable_grow(t, (n), sizeof((t)[0]))) != NULL : 1)
+#define HashTable_ensure(table, n) (HashTable_size(table) < (n) ? (*(void**)&(table) = HashTable_grow(table, (n), sizeof((table)[0]))) != NULL : 1)
 
-static int hashtable_find(void* table, int key, int* out_hash, int* out_prev)
+static int HashTable_find(void* table, int key, int* outHashIndex, int* outPrevIndex)
 {
-    struct hashtable* raw = hashtable_raw(table);        
-    int hash = (key) % raw->hash_count;            
-    int curr = raw->hashs[hash];                 
-    int prev = -1;                                   
+    if (!table)
+    {
+        return -1;
+    }
+
+    int* raw        = HashTable_raw(table);
+    int  size       = raw[0];
+    int  hashCount  = raw[2];
+
+    int* hashs = (int*)table;
+    int* nexts = hashs + hashCount;
+    int* keys  = nexts + size;
+
+    int  hashIndex  = ((unsigned)key) % hashCount;
+
+    int  currIndex  = hashs[hashIndex];                 
+    int  prevIndex  = -1;                              
                                         
-    while (curr > -1) 
+    while (currIndex > -1) 
     {                              
-        if (raw->keys[curr] == key) 
+        if (keys[currIndex] == key) 
         {              
             break;                                     
-        }                                              
-        prev = curr; 
-        curr = raw->nexts[curr];
+        }
+
+        prevIndex = currIndex; 
+        currIndex = nexts[currIndex];
     }                                                  
                                         
-    if (out_prev) *out_prev = prev;                
-    if (out_hash) *out_hash = hash;   
-    return curr;                                 
+    if (outPrevIndex) *outPrevIndex = prevIndex;                
+    if (outHashIndex) *outHashIndex = hashIndex;   
+    return currIndex;                                 
 }
 
-static void* hashtable_grow(void* table, int reqsize, int elemsize)
+static void* HashTable_grow(void* table, int targetSize, int itemSize)
 {
     if (!table)
     {
         return NULL;
     }
 
-    struct hashtable* raw = hashtable_raw(table);
-    int size = raw->size > 0 ? raw->size : 8;
-    while (size < reqsize) size *= 2;
+    int* raw = HashTable_raw(table);
 
-    int* keys = raw->keys;
-    int* nexts = raw->nexts;
-    int* hashs = raw->hashs;
-    
-    struct hashtable* new_table = (struct hashtable*)realloc(raw, sizeof(struct hashtable) + size * elemsize);
-    if (new_table)
+    int oldSize = raw[0];
+    int newSize = (oldSize > 16 ? oldSize : 16); while (newSize < targetSize) newSize *= 2;
+    if (oldSize == newSize)
     {
-        new_table->size  = size;
-        new_table->nexts = (int*)realloc(new_table->nexts, size * sizeof(int));
-        new_table->keys  = (int*)realloc(new_table->keys, size * sizeof(int));
+        return table;
+    }
 
-        if (!new_table->nexts || !new_table->keys)
-        {
-            free(new_table->keys);
-            free(new_table->nexts);
-            free(new_table->hashs);
-            free(new_table);
-            return NULL;
-        }
-        else
-        {
-            return new_table + 1;
-        }
+    //int  count      = raw[1];
+    int  hashCount  = raw[2];
+    
+    int* newRaw = (int*)realloc(raw, HashTable_calcMemorySize(newSize, hashCount, itemSize));
+    if (newRaw)
+    {
+        newRaw[0] = newSize;
+
+        int* oldHashs   = newRaw + 2;
+        int* newHashs   = newRaw + 2;
+
+        int* oldNexts   = oldHashs + hashCount;
+        int* newNexts   = newHashs + hashCount;
+
+        int* oldKeys    = oldNexts + oldSize;
+        int* newKeys    = newNexts + newSize;
+
+        int* oldValues  = oldKeys + oldSize;
+        int* newValues  = newKeys + newSize;
+
+        memmove(newValues, oldValues, oldSize * itemSize);
+        memmove(newKeys, oldKeys, oldSize * sizeof(int));
+
+        return newRaw + 3;
     }
     else
     {
-        free(keys);
-        free(nexts);
-        free(hashs);
+        free(raw);
         return NULL;
     }
 }
 
-#endif /* __LIBCON_HASHTABLE_H__ */
