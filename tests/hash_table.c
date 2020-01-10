@@ -28,12 +28,12 @@ int main(int argc, char* argv[])
     int collision = 0;
     for (i = 0; i < string_data_count; i++)
     {
-        int key = murmur_hash(string_data[i], strlen(string_data[1]));
+        unsigned key = murmur_hash32(string_data[i], strlen(string_data[1]));
         if (HashTable_has(hashCollisionCheckTable, key))
         {
             collision = 1;
             HashTable_get(hashCollisionCheckTable, key, -1, &intValue);
-            printf("Hash collsion. Key: %s - hashedKey: %d - Times: %d\n", string_data[i], key, ++intValue);
+            printf("Hash collsion. Key: %s - hashedKey: %u - Times: %d\n", string_data[i], key, ++intValue);
         }
         else
         {

@@ -20,7 +20,7 @@
 #define HashTable_count(table)      ((table) ? HashTable_raw(table)[1] : 0)
 #define HashTable_hashCount(table)  ((table) ? HashTable_raw(table)[2] : 0)
 
-#define HashTable_calcMemorySize(size, hashCount, itemSize) (3 * sizeof(int) + (size) * (2 * sizeof(int) + (itemSize)) + (hashCount) * sizeof(int))
+#define HashTable_calcMemorySize(size, hashCount, itemSize) (3 * sizeof(int) + (size) * (sizeof(int) + sizeof(unsigned) + (itemSize)) + (hashCount) * sizeof(int))
 
 #define HashTable_init(table, size, hashCount)                                                      \
     do {                                                                                            \
@@ -110,7 +110,7 @@
 
 #define HashTable_ensure(table, n) (HashTable_size(table) < (n) ? (*(void**)&(table) = HashTable_grow(table, (n), sizeof((table)[0]))) != NULL : 1)
 
-static int HashTable_find(void* table, int key, int* outHashIndex, int* outPrevIndex)
+static int HashTable_find(void* table, unsigned key, int* outHashIndex, int* outPrevIndex)
 {
     if (!table)
     {
@@ -121,11 +121,11 @@ static int HashTable_find(void* table, int key, int* outHashIndex, int* outPrevI
     int  size       = raw[0];
     int  hashCount  = raw[2];
 
-    int* hashs = (int*)table;
-    int* nexts = hashs + hashCount;
-    int* keys  = nexts + size;
+    int*        hashs = (int*)table;
+    int*        nexts = hashs + hashCount;
+    unsigned*   keys  = (unsigned*)(nexts + size);
 
-    int  hashIndex  = ((unsigned)key) % hashCount;
+    int  hashIndex  = key % hashCount;
 
     int  currIndex  = hashs[hashIndex];                 
     int  prevIndex  = -1;                              
@@ -170,17 +170,17 @@ static void* HashTable_grow(void* table, int targetSize, int itemSize)
     {
         newRaw[0] = newSize;
 
-        int* oldHashs   = newRaw + 2;
-        int* newHashs   = newRaw + 2;
+        int*        oldHashs    = newRaw + 2;
+        int*        newHashs    = newRaw + 2;
 
-        int* oldNexts   = oldHashs + hashCount;
-        int* newNexts   = newHashs + hashCount;
+        int*        oldNexts    = oldHashs + hashCount;
+        int*        newNexts    = newHashs + hashCount;
 
-        int* oldKeys    = oldNexts + oldSize;
-        int* newKeys    = newNexts + newSize;
+        unsigned*   oldKeys     = (unsigned*)(oldNexts + oldSize);
+        unsigned*   newKeys     = (unsigned*)(newNexts + newSize);
 
-        int* oldValues  = oldKeys + oldSize;
-        int* newValues  = newKeys + newSize;
+        void*       oldValues   = oldKeys + oldSize;
+        void*       newValues   = newKeys + newSize;
 
         memmove(newValues, oldValues, oldSize * itemSize);
         memmove(newKeys, oldKeys, oldSize * sizeof(int));
