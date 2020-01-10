@@ -7,7 +7,7 @@
 struct person
 {
     const char* name;
-    link_t sibling;  
+    Link sibling;  
 };
 
 int main(int argc, char* argv[])
@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
             if (!root_person) root_person = person;
             if (prev_person)
             {
-                link_prev(&prev_person->sibling, &person->sibling);
+                Link_attachPrev(&prev_person->sibling, &person->sibling);
             }
             prev_person = person;
         }
@@ -43,13 +43,13 @@ int main(int argc, char* argv[])
     {
         printf("person->name: %s\n", person->name);
 
-        person = link_data(person->sibling.next, struct person, sibling);
+        person = Link_container(person->sibling.next, struct person, sibling);
     }
 
     person = root_person;
     while (person)
     {
-        struct person* next = link_data(person->sibling.next, struct person, sibling);
+        struct person* next = Link_container(person->sibling.next, struct person, sibling);
 
         free(person);
 
