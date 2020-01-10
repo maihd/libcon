@@ -8,13 +8,14 @@
 
 int main(int argc, char* argv[])
 {
+    int intValue;
+    
     HashTable(int) intTable = 0;
     HashTable_init(intTable, 64, 64);
 
     printf("Set value to intTable[10] = 10\n");
     HashTable_set(intTable, 10, 10);
     
-    int intValue;
     HashTable_get(intTable, 10, intValue);
     printf("Get value of intTable[10] = %d\n", intValue);
 
