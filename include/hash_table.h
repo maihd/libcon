@@ -9,9 +9,9 @@
 #endif
 
 /* struct HashTable
-** memory layout:   |[size]|[count]|[hashCount]|[hashs]|[header]|[nexts]|[keys]|[values]|
-** memory offset: -12     -8      -4            T   size*4   size*8  size*12  16*size              
-** T is your table
+** types:              int    int       int          int*          int*       unsigned*        T*
+** memory layout:   |[size]|[count]|[hashCount]|[---hashs---]|[---nexts---]|[---keys---]|[---values---]|
+** memory offset: -12     -8      -4           0         size*4        size*8       size*12        size*sizeof(T)
 **/
 #define HashTable(T)                T*
 
