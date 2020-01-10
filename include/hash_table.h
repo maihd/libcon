@@ -90,15 +90,19 @@
         }                                                                                   \
     } while (0)
 
-#define HashTable_get(table, key, outValue)                                                             \
+#define HashTable_get(table, key, defValue, outValue)                                                   \
     do {                                                                                                \
+        HASHTABLE_ASSERT(outValue != 0, "outValue must not be null");                                   \
+                                                                                                        \
         int currIndex = HashTable_find(table, key, NULL, NULL);                                         \
         if (currIndex > -1) {                                                                           \
             void* values = ((int*)(table)) + HashTable_hashCount(table) + 2 * HashTable_size(table);    \
             void* ptr = table;                                                                          \
             *(void**)&(table) = values;                                                                 \
-            outValue = (table)[currIndex];                                                              \
+            *(outValue) = (table)[currIndex];                                                           \
             *(void**)&(table) = ptr;                                                                    \
+        } else {                                                                                        \
+            *(outValue) = defValue;                                                                     \
         }                                                                                               \
     } while (0)
 

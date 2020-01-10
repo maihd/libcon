@@ -9,15 +9,15 @@
 int main(int argc, char* argv[])
 {
     int intValue;
-    
+
     HashTable(int) intTable = 0;
     HashTable_init(intTable, 64, 64);
 
     printf("Set value to intTable[10] = 10\n");
     HashTable_set(intTable, 10, 10);
     
-    HashTable_get(intTable, 10, intValue);
-    printf("Get value of intTable[10] = %d\n", intValue);
+    HashTable_get(intTable, 10, -1, &intValue);
+    printf("Get value of intTable[10] = %d (-1 mean have no value -> BUGGED)\n", intValue);
 
     HashTable_free(intTable);
 
@@ -32,7 +32,7 @@ int main(int argc, char* argv[])
         if (HashTable_has(hashCollisionCheckTable, key))
         {
             collision = 1;
-            HashTable_get(hashCollisionCheckTable, key, intValue);
+            HashTable_get(hashCollisionCheckTable, key, -1, &intValue);
             printf("Hash collsion. Key: %s - hashedKey: %d - Times: %d\n", string_data[i], key, ++intValue);
         }
         else
