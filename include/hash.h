@@ -1,34 +1,33 @@
-#ifndef __LIBCON_HASH_H__
-#define __LIBCON_HASH_H__
+#pragma once
 
 #include <string.h>
 
 #if defined(__cplusplus)
 #define HAVE_HASHOF
-inline int hashof(const char* x)
+inline unsigned hashof32(const char* x)
 {
-    return murmur_hash(x, strlen(x));
+    return murmur_hash32(x, strlen(x));
 }
 
 template <typename type_t>
-inline int hashof(const type_t& x)
+inline unsigned hashof32(const type_t& x)
 {
-    return murmur_hash(&x, sizeof(x));
+    return murmur_hash32(&x, sizeof(x));
 }
 #endif
 
-static int murmur_hash(const void* data, size_t size)
+static unsigned murmur_hash32(const void* data, size_t size)
 {
-    static int seed = 0;
+    static unsigned seed = 0;
     
-    const char* key = (const char*)data;
+    const unsigned char* key = (const unsigned char*)data;
     if (size > 3)
     {
-        const int* key_x4 = (const int*)key;
+        const unsigned* key_x4 = (const unsigned*)key;
         size_t i = size >> 2;
         do 
         {
-            int k = *key_x4++;
+            unsigned k = *key_x4++;
 
             k *= 0xcc9e2d51;
             k  = (k << 15) | (k >> 17);
@@ -39,13 +38,13 @@ static int murmur_hash(const void* data, size_t size)
             seed  = (seed * 5) + 0xe6546b64;
         } while (--i);
 
-        key = (const char*)key_x4;
+        key = (const unsigned char*)key_x4;
     }
 
     if (size & 3)
     {
         size_t i = size & 3;
-        int k = 0;
+        unsigned k = 0;
         key = &key[i - 1];
 
         do 
@@ -70,5 +69,3 @@ static int murmur_hash(const void* data, size_t size)
 
     return seed;
 }
-
-#endif /* __LIBCON_HASH_H__ */
