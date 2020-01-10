@@ -11,16 +11,17 @@ int main(int argc, char* argv[])
 
     printf("libcon array test.\n");
 
-    int* intarr = array_make();
+    Array(int) intarr = Array_make();
     
     int i, n;
 
     printf("Add 10 randomize numbers... ");
     for (i = 0, n = 10; i < n; i++)
     {
-        array_push(intarr, rand());
+        Array_push(intarr, rand());
     }
     printf("=> DONE!\n");
 
+    Array_free(intarr);
     return 0;
 }

@@ -1,5 +1,7 @@
-#ifndef __CON_ARRAY_H__
-#define __CON_ARRAY_H__
+#pragma once
+
+#include <stdlib.h>
+#include <string.h>
 
 /**
  * Array structure
@@ -9,24 +11,22 @@
  *      type_t elements[];
  * }
  */
+#define Array(T)                    T*
 
-#include <stdlib.h>
-#include <string.h>
+#define Array_raw(array)            ((int*)(array) - 2)
+#define Array_make()                0
+#define Array_free(array)           ((array) ? (free(Array_raw(array)), (array) = 0, (void)0) : (void)0)
+#define Array_size(array)           ((array) ? Array_raw(array)[0] : 0)
+#define Array_count(array)          ((array) ? Array_raw(array)[1] : 0)
+#define Array_push(array, value)    (Array_ensure(array, Array_count(array) + 1) ? ((void)((array)[Array_raw(array)[1]++] = value), 1) : 0)
+#define Array_pop(array)            ((array)[--Array_raw(array)[1]]);
+#define Array_ensure(array, size)   ((!(array) || Array_size(array) < (size)) ? (*((void**)&(array))=Array_grow(array, size, sizeof((array)[0]))) != NULL : 1)
 
-#define array_raw(a)         ((int*)(a) - 2)
-#define array_make()         0
-#define array_free(a)        ((a) ? free(array_raw(a)) : (void)0)
-#define array_size(a)        ((a) ? array_raw(a)[0] : 0)
-#define array_count(a)       ((a) ? array_raw(a)[1] : 0)
-#define array_push(a, v)     (array_ensure(a, array_count(a) + 1) ? ((void)((a)[array_raw(a)[1]++] = v), 1) : 0)
-#define array_pop(a, v)      ((a)[--array_raw(a)[1]]);
-#define array_ensure(a, n)   ((!(a) || array_size(a) < (n)) ? (*((void**)&(a))=array_grow(a, n, sizeof(a[0]))) != NULL : 1)
-
-static void* array_grow(void* array, int reqsize, int elemsize)
+static void* Array_grow(void* array, int reqsize, int elemsize)
 {
-    int* raw   = array ? array_raw(array) : NULL;
+    int* raw   = array ? Array_raw(array) : NULL;
     int  size  = array && raw[0] > 0 ? raw[0] : 8;
-    int  count = array_count(array);
+    int  count = Array_count(array);
 
     while (size < reqsize) size *= 2;
 
@@ -42,5 +42,3 @@ static void* array_grow(void* array, int reqsize, int elemsize)
         return NULL;
     }
 }
-
-#endif /* __CON_ARRAY_H__ */
