@@ -1,21 +1,5 @@
 #pragma once
 
-#include <string.h>
-
-#if defined(__cplusplus)
-#define HAVE_HASHOF
-inline unsigned hashof32(const char* x)
-{
-    return murmur_hash32(x, strlen(x));
-}
-
-template <typename type_t>
-inline unsigned hashof32(const type_t& x)
-{
-    return murmur_hash32(&x, sizeof(x));
-}
-#endif
-
 static unsigned murmur_hash32(const void* data, size_t size)
 {
     static unsigned seed = 0;

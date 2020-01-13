@@ -1,18 +1,18 @@
-#ifndef __LIBCON_STR_H__ 
-#define __LIBCON_STR_H__
+#ifndef __LIBCON_STRING_EX_H__ 
+#define __LIBCON_STRING_EX_H__
 
 #include <stdarg.h>
 
-#ifndef STR_API
-#define STR_API
+#ifndef STRING_API
+#define STRING_API
 #endif
 
-STR_API char* strfmt(const char* fmt, ...);
-STR_API char* strvfmt(const char* fmt, va_list varg);
+STRING_API char* strfmt(const char* fmt, ...);
+STRING_API char* strvfmt(const char* fmt, va_list varg);
 
-#endif /* __LIBCON_STR_H__ */
+#endif /* __LIBCON_STRING_EX_H__ */
 
-#ifdef STR_IMPL
+#ifdef STRING_EX_IMPL
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,13 +22,13 @@ char* strfmt(const char* fmt, ...)
 {
     va_list varg;
     va_start(varg, fmt);
-    char* res = strvfmt(fmt, varg);
+    char* res = vstrfmt(fmt, varg);
     va_end(varg);
 
     return res;
 }
 
-char* strvfmt(const char* fmt, va_list varg)
+char* vstrfmt(const char* fmt, va_list varg)
 {
     va_list varg2;
     va_copy(varg2, varg);

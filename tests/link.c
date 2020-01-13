@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../include/link.h"
-#include "../include/macros.h"
+#include "../include/Link.h"
+#include "../include/Macros.h"
 
 struct person
 {
