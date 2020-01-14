@@ -20,14 +20,14 @@
 #define HashTable_getCount(table)       ((table) ? HashTable_getMeta(table)[1] : 0)
 #define HashTable_getHashCount(table)   ((table) ? HashTable_getMeta(table)[2] : 0)
 
-#define HashTable_calcMemorySize(size, hashCount, itemSize) (3 * sizeof(int) + (size) * (sizeof(int) + sizeof(unsigned) + (itemSize)) + (hashCount) * sizeof(int))
+#define HashTable_calcBufferSize(size, hashCount, itemSize) (3 * sizeof(int) + (size) * (sizeof(int) + sizeof(unsigned) + (itemSize)) + (hashCount) * sizeof(int))
 
 #define HashTable_init(table, size, hashCount)                                                      \
     do {                                                                                            \
         HASHTABLE_ASSERT((size) > 0, "size must be > 0");                                           \
         HASHTABLE_ASSERT((hashCount) > 0, "hashCount must be > 0");                                 \
                                                                                                     \
-        int* meta = malloc(HashTable_calcMemorySize(size, hashCount, sizeof((table)[0])));          \
+        int* meta = malloc(HashTable_calcBufferSize(size, hashCount, sizeof((table)[0])));          \
         meta[0]   = size;                                                                           \
         meta[1]   = 0;                                                                              \
         meta[2]   = hashCount;                                                                      \
@@ -167,7 +167,7 @@ static void* HashTable_grow(void* table, int targetSize, int itemSize)
 
     int  hashCount  = meta[2];
     
-    int* newMeta = (int*)realloc(meta, HashTable_calcMemorySize(newSize, hashCount, itemSize));
+    int* newMeta = (int*)realloc(meta, HashTable_calcBufferSize(newSize, hashCount, itemSize));
     if (newMeta)
     {
         if (oldSize > 0)
