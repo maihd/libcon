@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
 
     printf("libcon array test.\n");
 
-    Array(int) intarr = Array_make();
+    Array(int) intarr = Array_new(int, 0);
     
     int i, n;
 

@@ -69,11 +69,6 @@
 
 static void* OrderedTable_grow(void* table, int size, int itemSize)
 {
-    if (!table)
-    {
-        return NULL;
-    }
-
     int oldSize = OrderedTable_getSize(table);
     int newSize = oldSize > 16 ? oldSize : 16;
     while (newSize < size) newSize = newSize << 1;
