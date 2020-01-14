@@ -18,7 +18,7 @@ STRING_BUFFER_API const char* StringBuffer_vformat(StringBuffer* buf, const char
 
 #endif /* __LIBCON_STRBUF_H__ */
 
-#ifdef STRBUF_IMPL
+#ifdef STRING_BUFFER_IMPL
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,7 +35,7 @@ void StringBuffer_free(StringBuffer* buf)
 {
     if (buf)
     {
-        array_free(*buf);
+        Array_free(*buf);
     }
 }
 
@@ -61,9 +61,9 @@ const char* StringBuffer_vformat(StringBuffer* buf, const char* fmt, va_list var
     int n = vsnprintf(NULL, 0, fmt, varg2);
     va_end(varg2);
 
-    int count   = array_count(*buf);
+    int count   = Array_count(*buf);
     int reqsize = count + n + 1;
-    if (array_ensure(*buf, reqsize))
+    if (Array_ensure(*buf, reqsize))
     {   
         char* str = *buf + count;
         vsnprintf(str, n + 1, fmt, varg);

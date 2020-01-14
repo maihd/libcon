@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#define STRBUF_IMPL
-#include "../include/strbuf.h"
+#define STRING_BUFFER_IMPL
+#include "../include/StringBuffer.h"
 
 int main(int argc, char* argv[])
 {

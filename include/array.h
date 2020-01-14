@@ -14,10 +14,12 @@
 #define Array(T)                    T*
 
 #define Array_raw(array)            ((int*)(array) - 2)
-#define Array_make()                0
-#define Array_free(array)           ((array) ? (free(Array_raw(array)), (array) = 0, (void)0) : (void)0)
 #define Array_size(array)           ((array) ? Array_raw(array)[0] : 0)
 #define Array_count(array)          ((array) ? Array_raw(array)[1] : 0)
+
+#define Array_make()                0
+#define Array_free(array)           ((array) ? (free(Array_raw(array)), (array) = 0, (void)0) : (void)0)
+
 #define Array_push(array, value)    (Array_ensure(array, Array_count(array) + 1) ? ((void)((array)[Array_raw(array)[1]++] = value), 1) : 0)
 #define Array_pop(array)            ((array)[--Array_raw(array)[1]]);
 #define Array_ensure(array, size)   ((!(array) || Array_size(array) < (size)) ? (*((void**)&(array))=Array_grow(array, size, sizeof((array)[0]))) != NULL : 1)

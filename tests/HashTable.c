@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 #include "../include/hash.h"
-#include "../include/hash_table.h"
+#include "../include/HashTable.h"
 
 // test data
 #include "./assets/string_data.c"

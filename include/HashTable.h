@@ -11,7 +11,7 @@
 /* struct HashTable
 ** types:              int    int       int          int*          int*       unsigned*        T*
 ** memory layout:   |[size]|[count]|[hashCount]|[---hashs---]|[---nexts---]|[---keys---]|[---values---]|
-** memory offset: -12     -8      -4           0         size*4        size*8       size*12        size*sizeof(T)
+** memory offset: -12     -8      -4           0         size*4        size*8       size*12        size*(12 + sizeof(T))
 **/
 #define HashTable(T)                T*
 
@@ -162,29 +162,35 @@ static void* HashTable_grow(void* table, int targetSize, int itemSize)
         return table;
     }
 
+    int oldCount = raw[1];
+    int newCount = oldCount;
+
     //int  count      = raw[1];
     int  hashCount  = raw[2];
     
     int* newRaw = (int*)realloc(raw, HashTable_calcMemorySize(newSize, hashCount, itemSize));
     if (newRaw)
     {
+        if (oldSize > 0)
+        {
+            int*        oldHashs    = newRaw + 2;
+            int*        newHashs    = newRaw + 2;
+
+            int*        oldNexts    = oldHashs + hashCount;
+            int*        newNexts    = newHashs + hashCount;
+
+            unsigned*   oldKeys     = (unsigned*)(oldNexts + oldSize);
+            unsigned*   newKeys     = (unsigned*)(newNexts + newSize);
+
+            void*       oldValues   = oldKeys + oldSize;
+            void*       newValues   = newKeys + newSize;
+
+            memmove(newValues, oldValues, oldSize * itemSize);
+            memmove(newKeys, oldKeys, oldSize * sizeof(int));
+        }
+
         newRaw[0] = newSize;
-
-        int*        oldHashs    = newRaw + 2;
-        int*        newHashs    = newRaw + 2;
-
-        int*        oldNexts    = oldHashs + hashCount;
-        int*        newNexts    = newHashs + hashCount;
-
-        unsigned*   oldKeys     = (unsigned*)(oldNexts + oldSize);
-        unsigned*   newKeys     = (unsigned*)(newNexts + newSize);
-
-        void*       oldValues   = oldKeys + oldSize;
-        void*       newValues   = newKeys + newSize;
-
-        memmove(newValues, oldValues, oldSize * itemSize);
-        memmove(newKeys, oldKeys, oldSize * sizeof(int));
-
+        newRaw[1] = newCount;
         return newRaw + 3;
     }
     else

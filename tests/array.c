@@ -1,7 +1,7 @@
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../include/array.h"
+#include "../include/Array.h"
 
 #define intcmp(a, b) ((a) - (b))
 

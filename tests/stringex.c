@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-#define STR_IMPL
-#include "../include/str.h"
+#define STRINGEX_IMPL
+#include "../include/stringex.h"
 
 int main(int argc, char* argv[])
 {
