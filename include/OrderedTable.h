@@ -101,6 +101,7 @@ static void* OrderedTable_grow(void* table, int size, int itemSize)
     }
     else
     {
+        free(oldMeta);
         return NULL;
     }
 }

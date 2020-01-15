@@ -165,7 +165,7 @@ static void* HashTable_grow(void* table, int targetSize, int itemSize)
     int oldCount = meta[1];
     int newCount = oldCount;
 
-    int  hashCount  = meta[2];
+    int hashCount  = meta[2];
     
     int* newMeta = (int*)realloc(meta, HashTable_calcBufferSize(newSize, hashCount, itemSize));
     if (newMeta)
@@ -194,6 +194,7 @@ static void* HashTable_grow(void* table, int targetSize, int itemSize)
     }
     else
     {
+        free(meta);
         return NULL;
     }
 }

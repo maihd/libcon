@@ -20,6 +20,7 @@
 #define Array_new(T, size)          ((T*)((size) > 0 ? Array_grow(0, size, sizeof(T)) : 0))
 #define Array_free(array)           ((array) ? (free(Array_getMeta(array)), (array) = 0, (void)0) : (void)0)
 
+#define Array_clear(array)          if (array) Array_getMeta(array)[1] = 0
 #define Array_push(array, value)    (Array_ensure(array, Array_getCount(array) + 1) ? ((void)((array)[Array_getMeta(array)[1]++] = value), 1) : 0)
 #define Array_pop(array)            ((array)[--Array_getMeta(array)[1]]);
 #define Array_ensure(array, size)   ((!(array) || Array_getSize(array) < (size)) ? (*((void**)&(array))=Array_grow(array, size, sizeof((array)[0]))) != NULL : 1)
@@ -47,6 +48,7 @@ static void* Array_grow(void* array, int reqsize, int elemsize)
     }
     else
     {
+        free(oldMeta);
         return NULL;
     }
 }

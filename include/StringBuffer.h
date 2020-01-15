@@ -41,7 +41,7 @@ void StringBuffer_free(StringBuffer* buf)
 
 void StringBuffer_clear(StringBuffer* buf)
 {
-    Array_raw(*buf)[1] = 0;
+    Array_clear(*buf);
 }
 
 const char* StringBuffer_format(StringBuffer* buf, const char* fmt, ...)
@@ -61,7 +61,7 @@ const char* StringBuffer_vformat(StringBuffer* buf, const char* fmt, va_list var
     int n = vsnprintf(NULL, 0, fmt, varg2);
     va_end(varg2);
 
-    int count   = Array_count(*buf);
+    int count   = Array_getCount(*buf);
     int reqsize = count + n + 1;
     if (Array_ensure(*buf, reqsize))
     {   
