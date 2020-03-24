@@ -21,11 +21,19 @@ struct Allocator
 #define Allocator_free(allocator, memoryAddress)    (allocator).free((allocator).state, memoryAddress)
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 ALLOCATOR_API Allocator Allocator_newHeap(void);
 ALLOCATOR_API void      Allocator_freeHeap(Allocator* allocator);
 
 ALLOCATOR_API Allocator Allocator_newTemp(void* data, int size);
 ALLOCATOR_API void      Allocator_freeTemp(Allocator* allocator);
+
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef ALLOCATOR_IMPL
 #include <stdlib.h>
@@ -85,12 +93,16 @@ void Allocator_freeHeap(Allocator* allocator)
 
 Allocator Allocator_newTemp(void* data, int size)
 {
-    if (!data || size < sizeof(AllocatorTempState))
+    if (!data || size < (int)sizeof(AllocatorTempState))
     {
-        return (Allocator){ 0 };
+        Allocator allocator;
+        allocator.state = 0;
+        allocator.alloc = 0;
+        allocator.free  = 0;
+        return allocator;
     }
 
-    AllocatorTempState* state = data;
+    AllocatorTempState* state = (AllocatorTempState*)data;
     state->capacity = size - sizeof(AllocatorTempState);
     state->allocated = 0;
 

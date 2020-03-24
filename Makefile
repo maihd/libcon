@@ -8,8 +8,10 @@ EXE=$(patsubst %.c,%.exe, $(SRC))
 .PHONY: clean all
 
 %.c: %.h
+%.cpp: %.h
 
-%.exe: %.c
+#%.exe: %.c
+%.exe: %.cpp
 	@echo "=> Testing $(patsubst tests/%.c,%.h,$<)"
 	@echo "   Compiling target $<"
 	@$(CC) -o $@ $< $(CFLAGS) $(LFLAGS)

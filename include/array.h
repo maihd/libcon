@@ -47,17 +47,12 @@ typedef struct ArrayMeta
  */
 #define Array(T)                                T*
 
-#define Array_getMeta(array)                    ((ArrayMeta*)(array) - 1)
-#define Array_getSize(array)                    ((array) ? Array_getMeta(array)->size : 0)
-#define Array_getCount(array)                   ((array) ? Array_getMeta(array)->count : 0)
-
 #define Array_new(T, size, allocator)           ((T*)Array_newMemory(size, allocator))
 #define Array_free(array)                       ((array) ? (Array_freeMemory(array), (array) = 0, true) : false)
 
-#define Array_clear(array)                      if (array) Array_getMeta(array)[1] = 0
-#define Array_push(array, value)                (Array_ensure(array, Array_getCount(array) + 1) ? (((array)[Array_getMeta(array)->count++] = value), true) : false)
-#define Array_pop(array)                        ((array)[--Array_getMeta(array)[1]]);
-#define Array_ensure(array, size)               ((!(array) || Array_getSize(array) < (size)) ? Array_grow((void**)&(array), size, sizeof((array)[0])) : true)
+#define Array_getMeta(array)                    ((array) ? (ArrayMeta*)(array) - 1 : 0)
+#define Array_getSize(array)                    ((array) ? Array_getMeta(array)->size : 0)
+#define Array_getCount(array)                   ((array) ? Array_getMeta(array)->count : 0)
 
 static void* Array_newMemory(int size, Allocator* allocator)
 {
@@ -149,5 +144,61 @@ static bool Array_grow(void** array, int targetBufferSize, int itemSize)
         return false;
     }
 }
+
+/* Define right api for target language */
+#ifdef __cplusplus
+/* C++ API */
+template <typename T>
+inline void Array_clear(Array(T) array)
+{
+    ArrayMeta* meta = Array_getMeta(array);
+    if (meta)
+    {
+        meta->count = 0;
+    }
+}
+
+template <typename T>
+inline bool Array_ensure(Array(T)& array, int size)
+{
+    if (!(array) || Array_getSize(array) < (size))
+    {
+        return Array_grow((void**)&(array), size, sizeof((array)[0]));
+    }
+    else
+    {
+        return false;
+    }
+}
+
+template <typename T>
+inline bool Array_push(Array(T)& array, T value)
+{
+    if (Array_ensure(array, Array_getCount(array) + 1))
+    {
+        ArrayMeta* meta = Array_getMeta(array);
+        array[meta->count++] = value;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+template <typename T>
+inline T Array_pop(Array(T) array)
+{
+    return array[--Array_getMeta(array)->count];
+}
+
+#else
+/* C API */
+
+#define Array_clear(array)                      if (array) Array_getMeta(array)->count = 0
+#define Array_push(array, value)                (Array_ensure(array, Array_getCount(array) + 1) ? (((array)[Array_getMeta(array)->count++] = value), true) : false)
+#define Array_pop(array)                        ((array)[--Array_getMeta(array)->count]);
+#define Array_ensure(array, size)               ((!(array) || Array_getSize(array) < (size)) ? Array_grow((void**)&(array), size, sizeof((array)[0])) : true)
+#endif
 
 /* END OF FILE */
