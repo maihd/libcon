@@ -3,52 +3,151 @@
 #include <stdlib.h>
 #include <string.h>
 
-/**
- * Array structure
- * struct array_t {
- *      int    size;
- *      int    count;
- *      type_t elements[];
- * }
- */
-#define Array(T)                    T*
-
-#define Array_getMeta(array)        ((int*)(array) - 2)
-#define Array_getSize(array)        ((array) ? Array_getMeta(array)[0] : 0)
-#define Array_getCount(array)       ((array) ? Array_getMeta(array)[1] : 0)
-
-#define Array_new(T, size)          ((T*)((size) > 0 ? Array_grow(0, size, sizeof(T)) : 0))
-#define Array_free(array)           ((array) ? (free(Array_getMeta(array)), (array) = 0, (void)0) : (void)0)
-
-#define Array_clear(array)          if (array) Array_getMeta(array)[1] = 0
-#define Array_push(array, value)    (Array_ensure(array, Array_getCount(array) + 1) ? ((void)((array)[Array_getMeta(array)[1]++] = value), 1) : 0)
-#define Array_pop(array)            ((array)[--Array_getMeta(array)[1]]);
-#define Array_ensure(array, size)   ((!(array) || Array_getSize(array) < (size)) ? (*((void**)&(array))=Array_grow(array, size, sizeof((array)[0]))) != NULL : 1)
-
-static void* Array_grow(void* array, int reqsize, int elemsize)
+/* Define bool if needed */
+#if !defined(__cplusplus) && !defined(__bool_true_false_are_defined)
+typedef char bool;
+enum
 {
-    int oldSize = Array_getSize(array);
-    int newSize = oldSize ? oldSize : 16;
-    while (newSize < reqsize) newSize = newSize << 1;
-    if (newSize <= oldSize)
-    {
-        return array;
-    }
+    true = 1, false = 0
+};
+#endif
 
-    int oldCount = Array_getCount(array);
-    int newCount = oldCount;
+/* Make sure we have Allocator */
+#ifndef ALLOCATOR_DEFINED
+#define ALLOCATOR_DEFINED
+typedef void* (*AllocatorAllocFn)(void* state, int size, int align);
+typedef void  (*AllocatorFreeFn)(void* state, void* memoryAddress);
 
-    int* oldMeta = array ? Array_getMeta(array) : NULL;
-    int* newMeta = realloc(oldMeta, 2 * sizeof(int) + newSize * elemsize);
-    if (newMeta)
+typedef struct Allocator Allocator;
+struct Allocator
+{
+    void*               state;
+    AllocatorAllocFn    alloc;
+    AllocatorFreeFn     free;
+};
+
+#define Allocator_alloc(allocator, size, align)     (allocator).alloc((allocator).state, size, align)
+#define Allocator_free(allocator, memoryAddress)    (allocator).free((allocator).state, memoryAddress)
+#endif
+
+/**
+ * ArrayMeta structure
+ * Define the information needed by array
+ */
+typedef struct ArrayMeta
+{
+    Allocator*  allocator;
+    int         size;
+    int         count;
+    /* T*      elements[]; */
+} ArrayMeta;
+
+/**
+ * Array<T>
+ */
+#define Array(T)                                T*
+
+#define Array_getMeta(array)                    ((ArrayMeta*)(array) - 1)
+#define Array_getSize(array)                    ((array) ? Array_getMeta(array)->size : 0)
+#define Array_getCount(array)                   ((array) ? Array_getMeta(array)->count : 0)
+
+#define Array_new(T, size, allocator)           ((T*)Array_newMemory(size, allocator))
+#define Array_free(array)                       ((array) ? (Array_freeMemory(array), (array) = 0, true) : false)
+
+#define Array_clear(array)                      if (array) Array_getMeta(array)[1] = 0
+#define Array_push(array, value)                (Array_ensure(array, Array_getCount(array) + 1) ? (((array)[Array_getMeta(array)->count++] = value), true) : false)
+#define Array_pop(array)                        ((array)[--Array_getMeta(array)[1]]);
+#define Array_ensure(array, size)               ((!(array) || Array_getSize(array) < (size)) ? Array_grow((void**)&(array), size, sizeof((array)[0])) : true)
+
+static void* Array_newMemory(int size, Allocator* allocator)
+{
+    if (size <= 0 && !allocator)
     {
-        newMeta[0] = newSize;
-        newMeta[1] = newCount;
-        return newMeta + 2;
+        return NULL;
     }
     else
     {
-        free(oldMeta);
-        return NULL;
+        int neededMemory = sizeof(ArrayMeta) + (size > 0 ? size : 0);
+
+        ArrayMeta* meta = (ArrayMeta*)(allocator ? Allocator_alloc(*allocator, neededMemory, 0) : malloc(neededMemory));
+        meta->allocator = allocator;
+        meta->size      = neededMemory - sizeof(ArrayMeta);
+        meta->count     = 0;
+
+        return meta + 1;
     }
 }
+
+static void Array_freeMemory(void* array)
+{
+    if (array)
+    {
+        ArrayMeta* meta = Array_getMeta(array);
+        if (meta->allocator)
+        {
+            Allocator_free(*meta->allocator, meta);
+        }
+        else
+        {
+            free(meta);
+        }
+    }
+}
+
+static bool Array_grow(void** array, int targetBufferSize, int itemSize)
+{
+    int oldSize = Array_getSize(*array);
+    int newSize = oldSize ? oldSize : (1 << 4); // 16
+
+    int oldCount = Array_getCount(*array);
+    int newCount = oldCount;
+
+    /* New size must be PoTwo and greater than target size */
+    while (newSize < targetBufferSize) newSize = newSize << 1;
+
+    /* There is no need to allocate new memory buffer
+     * when old buffer is big enough */
+    if (newSize <= oldSize)
+    {
+        return true;
+    }
+    
+    int neededMemory = sizeof(ArrayMeta) + newSize * itemSize;
+
+    ArrayMeta* oldMeta = *array ? Array_getMeta(*array) : NULL;
+    ArrayMeta* newMeta = (ArrayMeta*)((oldMeta && oldMeta->allocator) ? Allocator_alloc(*oldMeta->allocator, neededMemory, 0) : malloc(neededMemory));
+    if (newMeta)
+    {
+        newMeta->allocator  = oldMeta ? oldMeta->allocator : NULL;
+        newMeta->size       = newSize;
+        newMeta->count      = newCount;
+
+        /* Copy the data from old buffer */
+        if (oldCount > 0)
+        {
+            memcpy(newMeta + 1, oldMeta + 1, oldCount * itemSize);
+        }
+
+        /* Release unused memory */
+        if (oldMeta)
+        {
+            if (oldMeta->allocator)
+            {
+                Allocator_free(*oldMeta->allocator, oldMeta);
+            }
+            else
+            {
+                free(oldMeta);
+            }
+        }
+        
+        *array = newMeta + 1;
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+/* END OF FILE */
